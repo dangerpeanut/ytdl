@@ -9,11 +9,11 @@
 #
 #      OPTIONS:  -a -t -d
 # REQUIREMENTS:  Youtube-dl https://rg3.github.io/youtube-dl/
-#                IO::Compress::Gzip http://search.cpan.org/~pmqs/IO-Compress-2.074/lib/IO/Compress/Gzip.pm
+#                IO::Compress::Gzip
 #                File::Copy
 #                Getopt::Long
 #                Data::Validate::URI
-#                Config::Simple
+#                Config::Tiny
 #         BUGS:  ---
 #        NOTES:  ---
 #       AUTHOR:  Peanut Danger (admin), dangerpeanut.net@gmail.com
@@ -28,7 +28,9 @@ use warnings;
 
 use feature qw/say/;
 
-use File::Copy qw/move/;
+use Env qw/HOME/;
+
+use File::Copy qw/move copy/;
 
 use Getopt::Long;
 
@@ -36,13 +38,17 @@ use IO::Compress::Gzip qw/gzip $GzipError/;
 
 use Data::Validate::URI qw/is_uri/;
 
-use Config::Simple;
+use Config::Tiny;
+
+my $disablescript = 'tru'; #This line is important
 
 #For the love of god, please change the config
 
-my $cfg = new Config::Simple('ytdl.ini');
+my $cfg = Config::Tiny->new;
 
-my $disablescript = 'true'; #This line is important
+$cfg = Config::Tiny->read("$HOME/.ytdl.ini");
+
+# Setting some simple options
 
 my $add = 0;
 my $daemon= 0;
@@ -50,8 +56,11 @@ my $test = 0;
 my $quit = 0;
 my $interrupted = 0;
 
+# Sets $quit to true if it receives the INT signal.
+
 $SIG{INT} = sub{ $quit = 1; $interrupted = 1; say '' };
 
+$SIG{HUP} = \&catch_hup;
 
 GetOptions ('a' => \$add,
             't'   => \$test,
@@ -62,13 +71,11 @@ sub startup{
     die "User did not configure the script." if ($disablescript eq 'true');
     }
 
-    $cfg->param('option.epoch', time);
-
     if ($test == 1){
         testing();
     };
 
-    if ( -s $cfg->param('files.list')){
+    if ( -s $cfg->{'files'}->{'list'} ){
         printlist();
     } else {
         say "No files in list to print.";
@@ -88,31 +95,48 @@ sub startup{
 };
 
 sub mainloop{
+
+    #loops until SIGINT
+
     until($quit == 1){
+
+    #See if the log is too big
+
     checklogsize();
-        if (-s $cfg->param('files.list')){
+
+        #If the list file has content, then we start downloading videos.
+
+        if (-s $cfg->{'files'}->{'list'}){
             getvids();
         };
+
+        # If the list file is empty, then we take a nap.
+
         takeanap();
 
+        #End Loop
 }
 
 };
 
+# Returns a list of urls from the file.
+
 sub getlist{
-#    open (my $fh, '<', $cfg->param('files.list')) or die "Can't open $cfg->param('files.list')";
-    open (my $fh, '<', $cfg->param('files.list'))
-        or die "Can't open $cfg->param('files.list')";
+#    open (my $fh, '<', $cfg->{'files'}->{'list'}) or die "Can't open $cfg->{'files'}->{'list'}";
+    open (my $fh, '<', $cfg->{'files'}->{'list'})
+        or die "Can't open $cfg->{'files'}->{'list'}";
     chomp(my @links = <$fh>);
     close $fh;
     return \@links;
 };
 
+# Prints the current working list file.
+
 sub printlist{
     say "Printing file list.";
     print "\n\n";
-    open (my $fh, '<', $cfg->param('files.list'))
-        or die "Can't open $cfg->param('files.list')";
+    open (my $fh, '<', $cfg->{'files'}->{'list'})
+        or die "Can't open $cfg->{'files'}->{'list'}";
     chomp(my @links = <$fh>);
     close $fh;
     foreach my $url (@links){
@@ -121,46 +145,49 @@ sub printlist{
 };
 
 
+# Copies the working list to the temp list and empties the working list.
+
 sub clearlist{
+    my $fh;
     say "Backing up current list file.";
-    open (my $fh, '<', $cfg->param('files.list'))
-        or die "Can't open $cfg->param('files.list')";
-    open (my $tfh, '>', $cfg->param('files.tmplist'))
-        or die "Can't open $cfg->param('files.list')";
-    print $tfh $fh;
+    copy($cfg->{'files'}->{'list'}, $cfg->{'files'}->{'tmplist'});
     say "Clearing current list file.";
-    open ($fh, '>', $cfg->param('files.list'))
-        or die "Can't open $cfg->param('files.list')";
-#    print $fh, '';
+    open ($fh, '>', $cfg->{'files'}->{'list'})
+        or die "Can't open $cfg->{'files'}->{'list'}";
     close $fh;
-    close $tfh;
     say "List file cleared.";
 };
 
+# Empties log file. Called after rotation.
+
 sub clearlog{
-    open (my $fh, '>', $cfg->param('files.log'))
-        or die "Can't open $cfg->param('files.log')";
+    open (my $fh, '>', $cfg->{'files'}->{'log'})
+        or die "Can't open $cfg->{'files'}->{'log'}";
     close $fh;
 };
 
 sub daemonize{
     say "Dropping into background.";
-    say "Please see $cfg->param('files.log') later.";
-    open(STDIN, '</dev/null');
-    open(STDOUT, '>>', $cfg->param('files.log'));
+    say "Please see $cfg->{'files'}->{'log'} later.";
+    open(STDIN, '<', '/dev/null');
+    open(STDOUT, '>>', $cfg->{'files'}->{'log'});
     open(STDERR, ">&STDOUT");
 
 }
 
+# Sets STDOUT to the working log file. Called after log rotation.
+
 sub resetoutput{
-    open(STDOUT, '>>', $cfg->param('files.log'));
+    open(STDOUT, '>>', $cfg->{'files'}->{'log'});
 
 }
 
+# Takes list of links from @ARGV and appends them to the working list file.
+
 sub addlist{
     die "No links given." unless ($ARGV[0]);
-    open (my $fh, '>>', $cfg->param('files.list'))
-        or die "Can't open $cfg->param('files.list')";
+    open (my $fh, '>>', $cfg->{'files'}->{'list'})
+        or die "Can't open $cfg->{'files'}->{'list'}";
     foreach my $url (@ARGV){
         say "$url is not a valid link" & next unless (is_uri($url));
         say "Adding $url to queue...";
@@ -169,10 +196,12 @@ sub addlist{
     close $fh;
 };
 
+# Downloads youtube videos from working list file.
+
 sub getvids{
-#    chdir $cfg->param('dirs.tmp');
+#    chdir $cfg->{'dirs'}->{'tmp'};
     my @cmds;
-    my $output = $cfg->param('dirs.done') . $cfg->param('option.ytdlouttemp');
+    my $output = $cfg->{'dirs'}->{'done'} . $cfg->{'option'}->{'ytdlouttemp'};
     my $vids = getlist();
     if ($test == 0){
         clearlist();
@@ -183,7 +212,7 @@ sub getvids{
         push @cmds, '--simulate';
     }
     push @cmds, (
-        '-r',"$cfg->param('option.rate')",
+        '-r',"$cfg->{'option'}->{'rate'}",
         '--yes-playlist',
         '-o', "$output",
         '--no-progress',
@@ -200,8 +229,8 @@ sub getvids{
 };
 
 sub takeanap{
-    say "Nothing to do. Sleeping for $cfg->param('option.naptime') seconds." unless($daemon == 1);
-    my $timer = $cfg->param('option.naptime');
+    say "Nothing to do. Sleeping for $cfg->{'option'}->{'naptime'} seconds." unless($daemon == 1);
+    my $timer = $cfg->{'option'}->{'naptime'};
         print "+++ seconds left\r" unless($daemon == 1);
     until ( $timer == 0 or $quit == 1 ){
         print "$timer\n" unless($daemon == 1);
@@ -223,10 +252,10 @@ sub END{
 sub rotatelog{
     say "Beginning Log Rotation";
     my @times = getdate();
-    my $logfile = $cfg->param('dirs.logs') . $times[0] . '-' . $times[1] . '-' . ".ytdl.log.gz";
+    my $logfile = $cfg->{'dirs'}->{'logs'} . $times[0] . '-' . $times[1] . '-' . ".ytdl.log.gz";
     say "Log is being rotated into $logfile";
-    open(STDOUT, '>>', $cfg->param('files.tmplog'));
-    open (my $fh, '<', $cfg->param('files.log')) or die "Can't open $cfg->param('files.log'): $?";
+    open(STDOUT, '>>', $cfg->{'files'}->{'tmplog'});
+    open (my $fh, '<', $cfg->{'files'}->{'log'}) or die "Can't open $cfg->{'files'}->{'log'}: $?";
     my $zip = new IO::Compress::Gzip $logfile or say "gzip failed: $GzipError";
     local $/ = undef;
     my $data = <$fh>;
@@ -264,9 +293,9 @@ sub getfilesize{
 };
 
 sub checklogsize{
-    my $logsize = getfilesize($cfg->param('files.log'))
-        or say "Cannot open file $cfg->param('files.log'): $?";
-    if ( $logsize > $cfg->param('option.rotatesize')){
+    my $logsize = getfilesize($cfg->{'files'}->{'log'})
+        or say "Cannot open file $cfg->{'files'}->{'log'}: $?";
+    if ( $logsize > $cfg->{'option'}->{'rotatesize'}){
         say "Log file is too large! Beginning log rotation.";
         rotatelog();
     } else {
@@ -275,5 +304,13 @@ sub checklogsize{
 #        say "Log file size: $logsize bytes."
     };
 };
+
+sub catch_hup {
+    # This catches the HUP signal.
+    my $signal = shift;
+    say "Somebody sent me a SIG$signal.\nI'm going to ignore them and close STDIN.";
+    close STDIN;
+}
+
 
 startup();
