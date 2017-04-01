@@ -40,8 +40,6 @@ use Data::Validate::URI qw/is_uri/;
 
 use Config::Tiny;
 
-my $disablescript = 'true'; #This line is important
-
 #For the love of god, please change the config
 
 my $cfg = Config::Tiny->new;
@@ -67,8 +65,8 @@ GetOptions ('a' => \$add,
             'd'   => \$daemon);
 
 sub startup{
-    if ($disablescript eq 'true'){
-    die "User did not configure the script." if ($disablescript eq 'true');
+    if ($cfg->{'option'}->{'disablescript'} eq 'true'){
+    die "Failed competence check. User error detected.";
     }
 
     if ($test == 1){

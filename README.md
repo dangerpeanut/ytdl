@@ -72,7 +72,7 @@ There is a config file provided with default values.
     * `rate` The [--limit-rate](https://github.com/rg3/youtube-dl/blob/master/README.md#download-options) value to be passed. At the moment this is *expected*.<BR>*Default: __10M__*
     * `naptime` This is the number of seconds `ytdl` will nap before checking to see if there are links to download.<BR>*Default: __120__*
     * `rotatesize` The log will not be rotated until it is greater than this size in bytes. _**Does not** support short-hand; EG 50k, 4.5m. **Must be** in bytes; EG 50000 4500000_<BR>*Default: __3000000__*
-    * `epoch` *Unused*
+    * `disablescript` This variable checks the user's competence.
     * `ytdlouttemp` This is the [template string](https://github.com/rg3/youtube-dl/blob/master/README.md#output-template) to pass to youtube-dl.<BR>*Default: __%(title)s-%(id)s.%(ext)s__*
 
 
