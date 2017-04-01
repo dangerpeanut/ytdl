@@ -166,6 +166,8 @@ sub clearlog{
     close $fh;
 };
 
+# Redirects output and redirects input from /dev/null
+
 sub daemonize{
     say "Dropping into background.";
     say "Please see $cfg->{'files'}->{'log'} later.";
@@ -211,6 +213,9 @@ sub getvids{
     if ($test == 1){
         push @cmds, '--simulate';
     }
+
+    # Build the shell command based on arguments and variables.
+
     push @cmds, (
         '-r',"$cfg->{'option'}->{'rate'}",
         '--yes-playlist',
@@ -228,6 +233,8 @@ sub getvids{
 }
 };
 
+# Makes the script wait for the naptime value.
+
 sub takeanap{
     say "Nothing to do. Sleeping for $cfg->{'option'}->{'naptime'} seconds." unless($daemon == 1);
     my $timer = $cfg->{'option'}->{'naptime'};
@@ -240,7 +247,7 @@ sub takeanap{
 say '';
 };
 
-
+# END
 
 sub END{
 #sub quitting{
@@ -249,21 +256,47 @@ sub END{
 
 };
 
+# Rotates the log. Called when checklogsize decides the log is too big.
+
 sub rotatelog{
     say "Beginning Log Rotation";
+
+    # Getting formats of current time.
+
     my @times = getdate();
+
+    #Building the compressed logfile name.
+
     my $logfile = $cfg->{'dirs'}->{'logs'} . $times[0] . '-' . $times[1] . '-' . ".ytdl.log.gz";
     say "Log is being rotated into $logfile";
+
+    # Redirecting STDOUT to temporary log file
+
     open(STDOUT, '>>', $cfg->{'files'}->{'tmplog'});
+
+    # Opening log file for compression.
+
     open (my $fh, '<', $cfg->{'files'}->{'log'}) or die "Can't open $cfg->{'files'}->{'log'}: $?";
+
+    # Creating gzip object to write to.
+
     my $zip = new IO::Compress::Gzip $logfile or say "gzip failed: $GzipError";
+
     local $/ = undef;
+
+    # Slurping log file into $data
+
     my $data = <$fh>;
+    # Closing log file
     close $fh;
 #    print $zip $fh;
+    # Compressing $data into gzipped log file.
     $zip->print($data);
+    #Closing gzip file
     close $zip;
+    # Emptying log file.
     clearlog();
+    # Redirect STDOUT to working log file
     resetoutput();
 };
 
