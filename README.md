@@ -24,7 +24,7 @@ A perl daemon that wraps [youtube-dl](https://rg3.github.io/youtube-dl/) for una
 
 `ytdl [OPTIONS] &`
 
-1. `ytdl -d`<BR>ytdl will slurp a list of [youtube-dl](https://rg3.github.io/youtube-dl/) friendly urls from the list file and begin iterating through this list. Depending on the length of the list or type of urls ( playlists ),[[]] this might take a while.
+1. `ytdl -d`<BR>ytdl will slurp a list of [youtube-dl](https://rg3.github.io/youtube-dl/) friendly urls from the list file and begin iterating through this list. Depending on the length of the list or type of urls ( playlists ), this might take a while.
 2. `ytdl -a [URLS]`<BR>ytdl will take the list of URLS after the `-a` option and add these to the list to be downloaded.
 
 *If __ytdl__ finds that the list file is empty, it checks to see if the log needs rotation and then sleeps. This loops until killed or SIGINT.*
