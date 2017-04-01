@@ -1,5 +1,5 @@
 # ytdl
-A perl daemon that wraps [youtube-dl](https://rg3.github.io/youtube-dl/) for unattended downloading of url lists.
+A perl wrapper daemon for [youtube-dl](https://rg3.github.io/youtube-dl/) to use in unattended downloading of url lists.
 
 ### REQUIREMENTS
 
