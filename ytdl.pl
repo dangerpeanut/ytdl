@@ -40,7 +40,7 @@ use Data::Validate::URI qw/is_uri/;
 
 use Config::Tiny;
 
-my $disablescript = 'tru'; #This line is important
+my $disablescript = 'true'; #This line is important
 
 #For the love of god, please change the config
 
