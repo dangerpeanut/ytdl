@@ -199,15 +199,15 @@ sub addlist{
 # Downloads youtube videos from working list file.
 
 sub getvids{
-#    chdir $cfg->{'dirs'}->{'tmp'};
     my @cmds;
     my $output = $cfg->{'dirs'}->{'done'} . $cfg->{'option'}->{'ytdlouttemp'};
     my $vids = getlist();
+    my @useropts = split(/,/, $cfg->{'option'}->{'ytdlopts'});
     if ($test == 0){
         clearlist();
     }
     push @cmds, 'nohup' if ($daemon == 1 );
-    push @cmds, '/usr/local/bin/youtube-dl';
+    push @cmds, "$cfg->{'python'}->{'pybin'}", "$cfg->{'python'}->{'yt-dlbin'}";
     if ($test == 1){
         push @cmds, '--simulate';
     }
@@ -216,12 +216,8 @@ sub getvids{
 
     push @cmds, (
         '-r',"$cfg->{'option'}->{'rate'}",
-        '--yes-playlist',
         '-o', "$output",
-        '--no-progress',
-        '--write-description',
-        '--write-info-json',
-        '--ignore-errors',
+        @useropts,
         #'--option',
         # @{ $vids } # Insert custom youtube-dl options above this line
     );

@@ -1,5 +1,5 @@
 # ytdl
-A perl wrapper daemon for [youtube-dl](https://rg3.github.io/youtube-dl/) to use in unattended downloading of url lists.
+A perl daemon that wraps [youtube-dl](https://rg3.github.io/youtube-dl/) for unattended downloading of url lists.
 
 ### REQUIREMENTS
 
@@ -74,6 +74,13 @@ There is a config file provided with default values.
     * `rotatesize` The log will not be rotated until it is greater than this size in bytes. _**Does not** support short-hand; EG 50k, 4.5m. **Must be** in bytes; EG 50000 4500000_<BR>*Default: __3000000__*
     * `disablescript` This variable checks the user's competence.
     * `ytdlouttemp` This is the [template string](https://github.com/rg3/youtube-dl/blob/master/README.md#output-template) to pass to youtube-dl.<BR>*Default: __%(title)s-%(id)s.%(ext)s__*
+    * `ytdlopts` Comma separated list of options to pass to youtube-dl.<BR>* Default: __--yes-playlist,--no-progress,--ignore-errors,--write-description,--write-info-json__*
+
+
+- `python`
+
+    * `yt-dlbin` The absolute path to your youtube-dl python script.
+    * `pyin` The absolute path to your python binary.
 
 
 ## Notes / Considerations
