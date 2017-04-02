@@ -18,7 +18,7 @@ A perl daemon that wraps [youtube-dl](https://rg3.github.io/youtube-dl/) for una
 2. Make `ytdl.pl` executable: `chmod +x ytdl.pl`
 3. Open `ytdl.ini` in a text editor and configure it.
 4. Copy `ytdl.ini` to `/home/youruser/.ytdl.ini`
-5. Enable the script by changing `$disablescript` in `ytdl.pl` from `true` to *`false`*.
+5. Enable the script by changing `disablescript` in `ytdl.ini` from `true` to *`false`*.
 
 ### Usage
 
